@@ -1,0 +1,72 @@
+Region: us-gov-west-1
+Image:
+  Os: rhel8
+HeadNode:
+  InstanceType: m6i.large
+  Networking:
+    SubnetId: subnet-058dc74c1ddb1c458
+    AdditionalSecurityGroups:
+      - sg-0437ebd763a806b3b
+  Ssh:
+    KeyName: pclustersecond
+  Iam:
+    AdditionalIamPolicies:
+      - Policy: arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      - Policy: arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess
+    S3Access:
+      - BucketName: pclustergrafana2
+        EnableWriteAccess: false
+  CustomActions:
+    OnNodeConfigured:
+      Script: s3://pclustergrafana2/post_install.sh
+Scheduling:
+  Scheduler: slurm
+  SlurmSettings:
+    QueueUpdateStrategy: DRAIN
+  SlurmQueues:
+  - Name: compute
+    ComputeResources:
+    - Name: cpu
+      Instances:
+      - InstanceType: c6i.large
+      MinCount: 0
+      MaxCount: 10
+    Networking:
+      SubnetIds:
+        - subnet-058dc74c1ddb1c458
+    Iam:
+      AdditionalIamPolicies:
+        - Policy: arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - Policy: arn:aws-us-gov:iam::101594152569:policy/compute-tagging
+      S3Access:
+        - BucketName: pclustergrafana2
+          EnableWriteAccess: false
+    CustomActions:
+      OnNodeConfigured:
+        Script: s3://pclustergrafana2/post_install.sh
+  - Name: gpu
+    ComputeResources:
+    - Name: gpu
+      InstanceType: g4dn.xlarge
+      MinCount: 0
+      MaxCount: 5
+    Networking:
+      SubnetIds:
+        - subnet-058dc74c1ddb1c458
+    Iam:
+      AdditionalIamPolicies:
+        - Policy: arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - Policy: arn:aws-us-gov:iam::101594152569:policy/compute-tagging
+      S3Access:
+        - BucketName: pclustergrafana2
+          EnableWriteAccess: false
+    CustomActions:
+      OnNodeConfigured:
+        Script: s3://pclustergrafana2/post_install.sh
+SharedStorage:
+  - MountDir: /data_lustre
+    Name: fsx-lustre-data
+    StorageType: FsxLustre
+    FsxLustreSettings:
+      StorageCapacity: 1200
+      DeploymentType: SCRATCH_2
