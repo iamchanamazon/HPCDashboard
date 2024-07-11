@@ -17,17 +17,7 @@ scrape_configs:
     ec2_sd_configs:
       - port: 8080
         refresh_interval: 10s
-        region: us-gov-west-1
-        filters:
-          - name: instance-state-name
-            values:
-              - running
-          - name: tag:Name
-            values:
-              - HeadNode
-      - port: 8080
-        refresh_interval: 10s
-        role_arn: arn:aws-us-gov:iam::101594152569:role/promethues-assume-role-PrometheusAssumeRole-hzz7W9QpiAb9
+        role_arn: {ROLE_ARN_OF_TARGET_ACCOUNT}
         region: us-gov-west-1
         filters:
           - name: instance-state-name
@@ -48,48 +38,11 @@ scrape_configs:
     scrape_interval: 5s
     ec2_sd_configs:
       - port: 9100
-        refresh_interval: 10s
-        region: us-gov-west-1
-      # Discover for account 101594152569
-      - port: 9100
-        role_arn: arn:aws-us-gov:iam::101594152569:role/PrometheusRole
+        role_arn: {ROLE_ARN_OF_TARGET_ACCOUNT}
         region: us-gov-west-1
       - port: 9400
         refresh_interval: 10s
-        role_arn: arn:aws-us-gov:iam::101594152569:role/PrometheusRole
-        region: us-gov-west-1
-        filters:
-          - name: instance-state-name
-            values:
-              - running
-          - name: tag:Name
-            values:
-              - Compute
-              - HeadNode
-          - name: instance-type
-            values:
-              - p2.xlarge
-              - p2.8xlarge
-              - p2.16xlarge
-              - p3.2xlarge
-              - p3.8xlarge
-              - p3.16xlarge
-              - p3dn.24xlarge
-              - p4d.24xlarge
-              - p4de.24xlarge
-              - g3s.xlarge
-              - g3.4xlarge
-              - g3.8xlarge
-              - g3.16xlarge
-              - g4dn.xlarge
-              - g4dn.2xlarge
-              - g4dn.4xlarge
-              - g4dn.8xlarge
-              - g4dn.16xlarge
-              - g4dn.12xlarge
-              - g4dn.metal
-      - port: 9400
-        refresh_interval: 10s
+        role_arn: {ROLE_ARN_OF_TARGET_ACCOUNT}
         region: us-gov-west-1
         filters:
           - name: instance-state-name

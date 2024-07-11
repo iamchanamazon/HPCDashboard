@@ -98,7 +98,7 @@ ______________________________________________________________________________
   }
 ```
 
-1. Create an identity-based policy for the COMPUTE-NODES. This policy allows the node to create the tags that contain the job ID running:
+4. Create an identity-based policy for the COMPUTE-NODES. This policy allows the node to create the tags that contain the job ID running:
 ```json
     {
       "Version": "2012-10-17",
@@ -112,7 +112,7 @@ ______________________________________________________________________________
     }
 ```
 
-1. Create the following endpoints for non-internet connected VPCs if needed for the HPC clusters:
+5. Create the following endpoints for non-internet connected VPCs if needed for the HPC clusters:
   ```yaml
    - Interface:
      - com.amazonaws.us-gov-west-1.fsx
@@ -127,19 +127,21 @@ ______________________________________________________________________________
   ```
    1. Attach the route table for the private subnet to the dynamodb gateway endpoint.
    
-1. Update Grafana admin password on file aws-parallelcluster-monitoring/docker-compose/docker-compose.head.yml
+6. Update Grafana admin password on file aws-parallelcluster-monitoring/docker-compose/docker-compose.head.yml
   Navigate to "grafana" section:
     Change "password" to desired password
     ```yaml
     ex: 'GF_SECURITY_ADMIN_PASSWORD=password'
     ```
 
-1.  If there exists a VPC Peering connection, do the following to allow traffic to flow between the Prometheus instance and the ParallelCluster EC2s:
-    1.  Create an IAM Role/Policy in the HPC Account that allows the Prometheus to assume, to access EC2 instances for metric gathering.
-    2.  Create an IAM role/Policy in the Grafana/Prometheus account that allows Prometheus to assume the role in HPC Account.
-    3.  Attach the role in step 2 to the Prometheus instance. 
+7.  If there exists a VPC Peering connection, do the following to allow traffic to flow between the Prometheus instance and the ParallelCluster EC2s:
+    1.  Create an IAM Role/Policy in the Grafana/Prometheus Account that allows the Prometheus instance to assume roles.
+        1.  You can launch the Cloudformation template `prometheus-source.yaml` to accomplish this.
+    2.  Create an IAM role/Policy in the HPC account that allows Prometheus role to read EC2 instances.
+        1.  You can launch the Cloudformation template  `prometheus-target.yaml` to accomplish this, edit {ACCOUNTID} and {ROLE-NAME}, AccountId is the Prometheus accountID, and ROLE-NAME is the role created in the above step.
+    3.  Attach the role in step 7.1 to the Prometheus instance.
 
-2. Modify the provided cluster template file.
+8. Modify the provided cluster template file.
   Create the AWS ParallelCluster cluster. Use the provided cluster.yaml
   AWS CloudFormation template file as a starting point to create the cluster. 
   
@@ -166,6 +168,8 @@ ______________________________________________________________________________
     <ADDITIONAL_COMPUTE_NODE_POLICY> – Enter the name of the IAM policy that you created for the compute node.
     ```
 
-1. Update 
-
-1.  After successful deployment, open browser on workspace client. Navigate to the Grafana page to look at dashboard
+9. Update the Prometheus config to scrape for EC2 instances in the HPC account. 
+   1.  Template to add on additional scrape targets is found in `aws-parallelcluster-monitoring/prometheus/prometheus.yml`
+   2.  Edit {ROLE_ARN_OF_TARGET_ACCOUNT} with the arn created in HPC account for the cross account access in step 7.2
+    
+10.  After successful deployment, open browser on workspace client. Navigate to the Grafana page to look at dashboard
