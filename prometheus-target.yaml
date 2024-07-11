@@ -8,7 +8,7 @@ Resources:
           - Effect: Allow
             Principal:
               AWS:
-                - "arn:aws-us-gov:iam::023598228701:root"
+                - "arn:aws-us-gov:iam::{ACCOUNTID}:root"
             Action:
               - "sts:AssumeRole"
       ManagedPolicyArns:

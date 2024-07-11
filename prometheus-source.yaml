@@ -11,8 +11,6 @@ Resources:
                 - "ec2.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws-us-gov:iam::aws:policy/AmazonEC2ReadOnlyAccess"
       Policies:
         - PolicyName: PrometheusAssumeRole
           PolicyDocument:
