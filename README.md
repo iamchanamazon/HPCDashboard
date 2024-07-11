@@ -53,7 +53,18 @@ ______________________________________________________________________________
         Source – ACCOUNDID / SECURITGROUPID **Note** This accountId and SecurityGroupId should belong to the Prometheus account
         Description – Allow traffic to flow from HPC headnodes to Prometheus
 
-2. (Optional on Partitions that allow billing) Create an identity-based policy for the HEAD-NODE. This policy allows the node to retrieve metric data from Amazon Cloudwatch. 
+2. Configure an additional security group for the Compute node.
+    Create a security group for the head node. This security group will allow inbound traffic from the monitoring dashboards/Prometheus instance to the head node. For instructions, see Create a security group in the Amazon VPC documentation.
+
+    Add an inbound rule to the security group. For instructions, see Add rules to a security group in the Amazon VPC documentation. Use the following parameters for the Inbound rule:
+
+        Type – HTTPS
+        Protocol – TCP
+        Port range – ALL (Or if you want to make more secure on ports: 8080, 9100, 9400)
+        Source – ACCOUNDID / SECURITGROUPID **Note** This accountId and SecurityGroupId should belong to the Prometheus account
+        Description – Allow traffic to flow from HPC headnodes to Prometheus
+
+3. (Optional on Partitions that allow billing) Create an identity-based policy for the HEAD-NODE. This policy allows the node to retrieve metric data from Amazon Cloudwatch. 
 ```json
   {
       "Version": "2012-10-17",
@@ -114,9 +125,9 @@ ______________________________________________________________________________
      - com.amazonaws.us-gov-west-1.dynamodb
      - com.amazonaws.us-gov-west-1.s3
   ```
-  
-1. Attach the route table for the private subnet to the dynamodb gateway endpoint.
-2. Update Grafana admin password on file aws-parallelcluster-monitoring/docker-compose/docker-compose.head.yml
+   1. Attach the route table for the private subnet to the dynamodb gateway endpoint.
+   
+1. Update Grafana admin password on file aws-parallelcluster-monitoring/docker-compose/docker-compose.head.yml
   Navigate to "grafana" section:
     Change "password" to desired password
     ```yaml
@@ -149,6 +160,8 @@ ______________________________________________________________________________
     <BUCKET_NAME> – Enter the name of the S3 bucket you created.
 
     <COMPUTE_SUBNET> – Enter the name of the private subnet in the VPC.
+
+    <ADDITIONAL_COMPUTE_NODE_SG> – The name of the security group that you created for the head node.
 
     <ADDITIONAL_COMPUTE_NODE_POLICY> – Enter the name of the IAM policy that you created for the compute node.
     ```
