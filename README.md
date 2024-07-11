@@ -43,22 +43,28 @@ ______________________________________________________________________________
 
 1. Configure an additional security group for the head node.
 
-    Create a security group for the head node. This security group will allow inbound traffic to the monitoring dashboards on the head node. For instructions, see Create a security group in the Amazon VPC documentation.
+    Create a security group for the head node. This security group will allow inbound traffic from the monitoring dashboards/Prometheus instance to the head node. For instructions, see Create a security group in the Amazon VPC documentation.
 
-    Add an inbound rule to the security group. For instructions, see Add rules to a security group in the Amazon VPC documentation. Use the following parameters for the rule:
+    Add an inbound rule to the security group. For instructions, see Add rules to a security group in the Amazon VPC documentation. Use the following parameters for the Inbound rule:
 
         Type – HTTPS
         Protocol – TCP
-        Port range – 8443
-        Source – Enter your IP address(Workspaces SG)
-        Description – Allow users to access the monitoring dashboard
+        Port range – ALL (Or if you want to make more secure on ports: 8080, 9100, 9400)
+        Source – ACCOUNDID / SECURITGROUPID **Note** This accountId and SecurityGroupId should belong to the Prometheus account
+        Description – Allow traffic to flow from HPC headnodes to Prometheus
 
-2. Create S3 bucket to contain all offline artifacts required for Grafana installation
-  ```yaml
-   cd s3-artifacts
-   aws s3 cp --recursive . s3://<BUCKET-NAME> --region us-gov-west-1
-  ```
-3. Create an identity-based policy for the HEAD-NODE. This policy allows the node to retrieve metric data from Amazon Cloudwatch. 
+2. Configure an additional security group for the Compute node.
+    Create a security group for the head node. This security group will allow inbound traffic from the monitoring dashboards/Prometheus instance to the head node. For instructions, see Create a security group in the Amazon VPC documentation.
+
+    Add an inbound rule to the security group. For instructions, see Add rules to a security group in the Amazon VPC documentation. Use the following parameters for the Inbound rule:
+
+        Type – HTTPS
+        Protocol – TCP
+        Port range – ALL (Or if you want to make more secure on ports: 8080, 9100, 9400)
+        Source – ACCOUNDID / SECURITGROUPID **Note** This accountId and SecurityGroupId should belong to the Prometheus account
+        Description – Allow traffic to flow from HPC headnodes to Prometheus
+
+3. (Optional on Partitions that allow billing) Create an identity-based policy for the HEAD-NODE. This policy allows the node to retrieve metric data from Amazon Cloudwatch. 
 ```json
   {
       "Version": "2012-10-17",
@@ -92,7 +98,7 @@ ______________________________________________________________________________
   }
 ```
 
-4. Create an identity-based policy for the COMPUTE-NODES. This policy allows the node to create the tags that contain the job ID and job owner:
+4. Create an identity-based policy for the COMPUTE-NODES. This policy allows the node to create the tags that contain the job ID running:
 ```json
     {
       "Version": "2012-10-17",
@@ -105,7 +111,8 @@ ______________________________________________________________________________
       ]
     }
 ```
-5. Create the following endpoints for non-internet connected VPCs:
+
+5. Create the following endpoints for non-internet connected VPCs if needed for the HPC clusters:
   ```yaml
    - Interface:
      - com.amazonaws.us-gov-west-1.fsx
@@ -118,13 +125,23 @@ ______________________________________________________________________________
      - com.amazonaws.us-gov-west-1.dynamodb
      - com.amazonaws.us-gov-west-1.s3
   ```
+   1. Attach the route table for the private subnet to the dynamodb gateway endpoint.
+   
 6. Update Grafana admin password on file aws-parallelcluster-monitoring/docker-compose/docker-compose.head.yml
   Navigate to "grafana" section:
     Change "password" to desired password
     ```yaml
     ex: 'GF_SECURITY_ADMIN_PASSWORD=password'
     ```
-7. Modify the provided cluster template file.
+
+7.  If there exists a VPC Peering connection, do the following to allow traffic to flow between the Prometheus instance and the ParallelCluster EC2s:
+    1.  Create an IAM Role/Policy in the Grafana/Prometheus Account that allows the Prometheus instance to assume roles.
+        1.  You can launch the Cloudformation template `prometheus-source.yaml` to accomplish this.
+    2.  Create an IAM role/Policy in the HPC account that allows Prometheus role to read EC2 instances.
+        1.  You can launch the Cloudformation template  `prometheus-target.yaml` to accomplish this, edit {ACCOUNTID} and {ROLE-NAME}, AccountId is the Prometheus accountID, and ROLE-NAME is the role created in the above step.
+    3.  Attach the role in step 7.1 to the Prometheus instance.
+
+8. Modify the provided cluster template file.
   Create the AWS ParallelCluster cluster. Use the provided cluster.yaml
   AWS CloudFormation template file as a starting point to create the cluster. 
   
@@ -146,7 +163,13 @@ ______________________________________________________________________________
 
     <COMPUTE_SUBNET> – Enter the name of the private subnet in the VPC.
 
+    <ADDITIONAL_COMPUTE_NODE_SG> – The name of the security group that you created for the head node.
+
     <ADDITIONAL_COMPUTE_NODE_POLICY> – Enter the name of the IAM policy that you created for the compute node.
     ```
 
-8. After successful deployment, open browser on workspace client. Navigate to the url `https://<HEADNODE-IP>:8443`
+9. Update the Prometheus config to scrape for EC2 instances in the HPC account. 
+   1.  Template to add on additional scrape targets is found in `aws-parallelcluster-monitoring/prometheus/prometheus.yml`
+   2.  Edit {ROLE_ARN_OF_TARGET_ACCOUNT} with the arn created in HPC account for the cross account access in step 7.2
+    
+10.  After successful deployment, open browser on workspace client. Navigate to the Grafana page to look at dashboard
